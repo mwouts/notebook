@@ -473,6 +473,12 @@ class FileContentsManager(FileManagerMixin, ContentsManager):
         try:
             if model['type'] == 'notebook':
                 nb = nbformat.from_dict(model['content'])
+                # Validating the notebook may add missing cell ids,
+                # so we need to do this before signing the notebook
+                try:
+                    nbformat.validator.validate(nb)
+                except nbformat.validator.ValidationError as err:
+                    self.log.error("Notebook JSON is invalid: %s", err)
                 self.check_and_sign(nb, path)
                 self._save_notebook(os_path, nb)
                 # One checkpoint should always exist for notebooks.
